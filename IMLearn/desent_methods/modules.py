@@ -33,7 +33,9 @@ class L2(BaseModule):
         output: ndarray of shape (1,)
             Value of function at point self.weights
         """
-        raise NotImplementedError()
+        # raise NotImplementedError()
+        return np.inner(self.weights, self.weights)
+        #todo check if correct
 
     def compute_jacobian(self, **kwargs) -> np.ndarray:
         """
@@ -49,8 +51,9 @@ class L2(BaseModule):
         output: ndarray of shape (n_in,)
             L2 derivative with respect to self.weights at point self.weights
         """
-        raise NotImplementedError()
-
+        #For f:R^d->R defined by f(x) = <w,x> then: n_in=d, n_out=1 and thus output shape is (1,d)
+        # raise NotImplementedError()
+        return self.weights / self.compute_output
 
 class L1(BaseModule):
     def __init__(self, weights: np.ndarray = None):
@@ -78,7 +81,8 @@ class L1(BaseModule):
         output: ndarray of shape (1,)
             Value of function at point self.weights
         """
-        raise NotImplementedError()
+        # raise NotImplementedError()
+        return np.sum(np.abs(self.weights))
 
     def compute_jacobian(self, **kwargs) -> np.ndarray:
         """
@@ -94,8 +98,9 @@ class L1(BaseModule):
         output: ndarray of shape (n_in,)
             L1 derivative with respect to self.weights at point self.weights
         """
-        raise NotImplementedError()
-
+        # raise NotImplementedError()
+        return np.sign(self.weights)
+        #todo check if correct because there is no use in compute_output
 
 class LogisticModule(BaseModule):
     """
