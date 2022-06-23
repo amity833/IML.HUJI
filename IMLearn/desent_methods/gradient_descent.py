@@ -7,7 +7,6 @@ from .learning_rate import FixedLR
 
 OUTPUT_VECTOR_TYPE = ["last", "best", "average"]
 
-
 def default_callback(model: GradientDescent, **kwargs) -> NoReturn:
     pass
 
@@ -39,6 +38,7 @@ class GradientDescent:
         Callable function should receive as input a GradientDescent instance, and any additional
         arguments specified in the `GradientDescent.fit` function
     """
+
     def __init__(self,
                  learning_rate: BaseLR = FixedLR(1e-3),
                  tol: float = 1e-5,
@@ -119,20 +119,35 @@ class GradientDescent:
                 Euclidean norm of w^(t)-w^(t-1)
 
         """
-        # raise NotImplementedError
-        x = np.zeros(X.shape[1])
+        # if f.weights is None:
+        #     f.weights(np.random.rand(X.shape[1]))
+        best_val = f.compute_output(X=X, y=y)
+        best_weights = f.weights
+        last = f.weights_
+        iter = 0
+        sum_weights = f.weights
         for t in range(self.max_iter_):
-            last = x # before update
+            iter += 1
+            last = f.weights_
             eta = self.learning_rate_.lr_step(t=t)
-            x -= eta*f.compute_jacobian().T
-            curr = x # after update
-            val = f.compute_output(X,y)
-            grad =
-            self.callback_(f,x,val=val,grad=grad,t=t,eta=eta,delta=delta)
-            delta = np.linalg.norm(last - curr)
-            if delta <= self.tol_:
+            curr = f.weights_ - eta * f.compute_jacobian(X=X, y=y)  # after update
+            delta = np.linalg.norm(curr - f.weights_)
+            f.weights_ = curr  # set f new weights
+            val = f.compute_output(X=X, y=y)
+            grad = f.compute_jacobian(X=X, y=y)
+            if val < best_val:
+                best_val = val
+                best_weights = f.weights
+            sum_weights += f.weights_
+
+            self.callback_([f.weights, val, grad, t, eta, delta])
+
+            if delta < self.tol_:
                 break
+            # last = curr  # before update in next iteration
 
-        return np.sum(x)/self.max_iter_
-
-
+        if self.out_type_ == OUTPUT_VECTOR_TYPE[1]:
+            return best_weights
+        if self.out_type_ == OUTPUT_VECTOR_TYPE[2]:
+            return sum_weights / iter
+        return f.weights_
